@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bài 3 - Quản Lý Công Việc Cá Nhân</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    .todo-app { max-width: 500px; margin: auto; font-family: Arial, sans-serif; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+    .completed { text-decoration: line-through; color: #888; }
+    .todo-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 6px; background: #f4f4f4; border-radius: 4px; }
+    .filters { margin: 15px 0; }
+    .filters button { margin-right: 5px; }
+    .active-filter { font-weight: bold; border-bottom: 2px solid #000; }
+    .empty-msg { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="app" class="todo-app">
+    <h2>Quản Lý Công Việc</h2>
+
+    <!-- 2 & 3. Thêm công việc bằng nút hoặc Enter, chống rỗng -->
+    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+      <input type="text" v-model.trim="tenCongViecMoi" @keyup.enter="themCongViec" placeholder="Nhập công việc..." style="flex: 1;">
+      <button @click="themCongViec">Thêm</button>
+    </div>
+
+    <!-- 7. Bộ lọc -->
+    <div class="filters">
+      <button @click="boLoc = 'all'" :class="{'active-filter': boLoc === 'all'}">Tất cả</button>
+      <button @click="boLoc = 'active'" :class="{'active-filter': boLoc === 'active'}">Chưa hoàn thành</button>
+      <button @click="boLoc = 'completed'" :class="{'active-filter': boLoc === 'completed'}">Đã hoàn thành</button>
+    </div>
+
+    <!-- 4 & 5. v-for với :key, checkbox hoàn thành, gạch ngang -->
+    <ul style="list-style: none; padding: 0;">
+      <li v-for="cv in danhSachDaLoc" :key="cv.id" class="todo-item">
+        <label>
+          <input type="checkbox" v-model="cv.hoanThanh">
+          <span :class="{ completed: cv.hoanThanh }">{{ cv.ten }}</span>
+        </label>
+        <!-- 6. Xóa từng công việc -->
+        <button @click="xoaCongViec(cv.id)" style="color: red;">Xóa</button>
+      </li>
+    </ul>
+
+    <!-- 10. Thông báo khi danh sách rỗng -->
+    <p v-if="danhSachDaLoc.length === 0" class="empty-msg">Không có công việc nào!</p>
+
+    <!-- 8. Thống kê số lượng bằng computed -->
+    <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+      <p>Tổng số công việc: <strong>{{ tongSoCongViec }}</strong></p>
+      <p>Công việc chưa hoàn thành: <strong>{{ soViecChuaHoanThanh }}</strong></p>
+      
+      <!-- 9. Xóa các việc đã hoàn thành -->
+      <button @click="xoaViecDaHoanThanh" v-if="coViecDaHoanThanh">Xóa các việc đã hoàn thành</button>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          // 1. Dữ liệu gồm id, ten, hoanThanh
+          danhSachCV: [
+            { id: 1, ten: 'Học bài Vue.js', hoanThanh: false },
+            { id: 2, ten: 'Làm bài tập thực hành buổi 6', hoanThanh: true }
+          ],
+          tenCongViecMoi: '',
+          boLoc: 'all' // all, active, completed
+        }
+      },
+      computed: {
+        // 7. Lọc danh sách công việc
+        danhSachDaLoc() {
+          if (this.boLoc === 'active') return this.danhSachCV.filter(c => !c.hoanThanh);
+          if (this.boLoc === 'completed') return this.danhSachCV.filter(c => c.hoanThanh);
+          return this.danhSachCV;
+        },
+        // 8. Computed thống kê
+        tongSoCongViec() {
+          return this.danhSachCV.length;
+        },
+        soViecChuaHoanThanh() {
+          return this.danhSachCV.filter(c => !c.hoanThanh).length;
+        },
+        coViecDaHoanThanh() {
+          return this.danhSachCV.some(c => c.hoanThanh);
+        }
+      },
+      methods: {
+        // 2 & 3. Thêm công việc
+        themCongViec() {
+          if (this.tenCongViecMoi !== '') {
+            this.danhSachCV.push({
+              id: Date.now(),
+              ten: this.tenCongViecMoi,
+              hoanThanh: false
+            });
+            this.tenCongViecMoi = '';
+          }
+        },
+        // 6. Xóa từng công việc
+        xoaCongViec(id) {
+          this.danhSachCV = this.danhSachCV.filter(c => c.id !== id);
+        },
+        // 9. Xóa các việc đã hoàn thành
+        xoaViecDaHoanThanh() {
+          this.danhSachCV = this.danhSachCV.filter(c => !c.hoanThanh);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

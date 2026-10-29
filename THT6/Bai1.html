@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bài 1 Thẻ Thông Tin Sinh Viên</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; max-width: 400px; font-family: Arial, sans-serif; }
+    .avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+    .grade-gioi { color: green; font-weight: bold; }
+    .grade-kha { color: blue; font-weight: bold; }
+    .grade-tb { color: orange; font-weight: bold; }
+    .grade-chuadat { color: red; font-weight: bold; }
+    .status { font-style: italic; color: #555; }
+    button { margin-top: 10px; cursor: pointer; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <div id="app" class="card">
+    <!-- 3. v-bind cho src và alt của ảnh -->
+    <img :src="sinhVien.avatar" :alt="sinhVien.hoTen" class="avatar">
+    
+    <!-- 2. Hiển thị họ tên bằng {{ }} và tên lớp bằng v-text -->
+    <h2>{{ sinhVien.hoTen }}</h2>
+    <p>Mã sinh viên: {{ sinhVien.maSV }}</p>
+    <p>Lớp: <span v-text="sinhVien.lop"></span></p>
+    
+    <p>Điểm trung bình: {{ sinhVien.dtb }}</p>
+    
+    <!-- 4 & 5. v-if/v-else-if xếp loại và đổi màu bằng :class -->
+    <p>Xếp loại: 
+      <span v-if="sinhVien.dtb >= 8 && sinhVien.dtb <= 10" class="grade-gioi">Giỏi</span>
+      <span v-else-if="sinhVien.dtb >= 6.5" class="grade-kha">Khá</span>
+      <span v-else-if="sinhVien.dtb >= 5" class="grade-tb">Trung bình</span>
+      <span v-else class="grade-chuadat">Chưa đạt</span>
+    </p>
+
+    <!-- 6. Hiển thị trạng thái -->
+    <p class="status">Trạng thái: {{ sinhVien.dangHoc ? 'Đang học' : 'Đã nghỉ' }}</p>
+
+    <!-- 7. v-show bật/tắt phần giới thiệu -->
+    <button @click="hienGioiThieu = !hienGioiThieu">
+      {{ hienGioiThieu ? 'Ẩn' : 'Hiện' }} giới thiệu
+    </button>
+    <div v-show="hienGioiThieu" style="margin-top: 10px; background: #f9f9f9; padding: 10px;">
+      <p>Giới thiệu: Sinh viên chăm chỉ, yêu thích lập trình Web với Vue.js.</p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          // 1. Khai báo dữ liệu sinh viên
+          sinhVien: {
+            maSV: 'SV123456',
+            hoTen: 'Nguyễn Văn A',
+            lop: 'CNTT-K15',
+            avatar: 'https://via.placeholder.com/150',
+            dtb: 7.0,
+            dangHoc: true
+          },
+          hienGioiThieu: true
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

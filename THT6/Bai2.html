@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bài 2 - Đặt Vé Xem Phim</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    .form-container { max-width: 450px; font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .confirm-box { margin-top: 20px; padding: 15px; background-color: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 5px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="app" class="form-container">
+    <h2>Form Đặt Vé Xem Phim</h2>
+    
+    <!-- 9. @submit.prevent -->
+    <form @submit.prevent="xuLyDatVe">
+      <!-- 1. Họ tên bằng v-model.trim -->
+      <div class="form-group">
+        <label>Họ và tên:</label>
+        <input type="text" v-model.trim="hoTen" placeholder="Nhập họ tên...">
+      </div>
+
+      <!-- 2. Chọn suất chiếu bằng select (ít nhất 3 suất) -->
+      <div class="form-group">
+        <label>Suất chiếu:</label>
+        <select v-model="suatChieu">
+          <option value="10:00 - Sáng">10:00 - Sáng</option>
+          <option value="14:30 - Chiều">14:30 - Chiều</option>
+          <option value="19:00 - Tối">19:00 - Tối</option>
+        </select>
+      </div>
+
+      <!-- 3. Chọn loại vé bằng radio -->
+      <div class="form-group">
+        <label>Loại vé:</label>
+        <label><input type="radio" v-model="loaiVe" value="thuong"> Vé thường (70.000đ)</label>
+        <label><input type="radio" v-model="loaiVe" value="vip"> Vé VIP (100.000đ)</label>
+      </div>
+
+      <!-- 4 & 7. Nhập số lượng vé + nút tăng/giảm -->
+      <div class="form-group">
+        <label>Số lượng (1 - 10):</label>
+        <button type="button" @click="giamSoLuong">-</button>
+        <input type="number" v-model.number="soLuong" min="1" max="10" style="width: 50px; text-align: center;">
+        <button type="button" @click="tangSoLuong">+</button>
+      </div>
+
+      <!-- 5. Checkbox chọn combo bắp nước -->
+      <div class="form-group">
+        <label>
+          <input type="checkbox" v-model="chonCombo"> Bắp nước combo (45.000đ)
+        </label>
+      </div>
+
+      <!-- 6. Tải tổng tiền tính bằng computed -->
+      <div class="form-group">
+        <p><strong>Tổng tiền: {{ tongTien.toLocaleString() }} VNĐ</strong></p>
+      </div>
+
+      <!-- 7. Nút đặt lại form -->
+      <button type="button" @click="datLaiForm">Đặt lại</button>
+      <!-- 8. Nút "Đặt vé" chỉ bật khi họ tên không rỗng và số lượng hợp lệ (1-10) -->
+      <button type="submit" :disabled="!formHopLe">Đặt vé</button>
+    </form>
+
+    <!-- 9. Xác nhận đặt vé ngay trên trang -->
+    <div v-if="thongTinXacNhan" class="confirm-box">
+      <h3>Xác nhận đơn đặt vé</h3>
+      <p><strong>Khách hàng:</strong> {{ thongTinXacNhan.hoTen }}</p>
+      <p><strong>Suất chiếu:</strong> {{ thongTinXacNhan.suatChieu }}</p>
+      <p><strong>Loại vé:</strong> {{ thongTinXacNhan.loaiVe === 'vip' ? 'VIP' : 'Thường' }}</p>
+      <p><strong>Số lượng:</strong> {{ thongTinXacNhan.soLuong }}</p>
+      <p><strong>Combo bắp nước:</strong> {{ thongTinXacNhan.chonCombo ? 'Có' : 'Không' }}</p>
+      <p><strong>Thành tiền:</strong> {{ thongTinXacNhan.tongTien.toLocaleString() }} VNĐ</p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return {
+          hoTen: '',
+          suatChieu: '19:00 - Tối',
+          loaiVe: 'vip',
+          soLuong: 2,
+          chonCombo: true,
+          thongTinXacNhan: null
+        }
+      },
+      computed: {
+        // 6. Computed tính tổng tiền
+        tongTien() {
+          const giaVe = this.loaiVe === 'vip' ? 100000 : 70000;
+          const tienCombo = this.chonCombo ? 45000 : 0;
+          return (giaVe * (this.soLuong || 0)) + tienCombo;
+        },
+        // 8. Kiểm tra form hợp lệ
+        formHopLe() {
+          return this.hoTen.length > 0 && Number.isInteger(this.soLuong) && this.soLuong >= 1 && this.soLuong <= 10;
+        }
+      },
+      methods: {
+        tangSoLuong() {
+          if (this.soLuong < 10) this.soLuong++;
+        },
+        giamSoLuong() {
+          if (this.soLuong > 1) this.soLuong--;
+        },
+        datLaiForm() {
+          this.hoTen = '';
+          this.suatChieu = '10:00 - Sáng';
+          this.loaiVe = 'thuong';
+          this.soLuong = 1;
+          this.chonCombo = false;
+          this.thongTinXacNhan = null;
+        },
+        xuLyDatVe() {
+          if (this.formHopLe) {
+            this.thongTinXacNhan = {
+              hoTen: this.hoTen,
+              suatChieu: this.suatChieu,
+              loaiVe: this.loaiVe,
+              soLuong: this.soLuong,
+              chonCombo: this.chonCombo,
+              tongTien: this.tongTien
+            };
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
