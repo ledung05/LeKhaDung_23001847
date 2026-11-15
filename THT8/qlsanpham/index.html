@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Sản Phẩm - PHP & Vue.js</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 15px; line-height: 1.5; }
+        h2 { color: #333; }
+        .alert { padding: 12px; margin-bottom: 15px; border-radius: 4px; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .form-box { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-save { background-color: #28a745; color: white; }
+        .btn-cancel { background-color: #6c757d; color: white; margin-left: 8px; }
+        .btn-edit { background-color: #ffc107; color: #212529; margin-right: 6px; }
+        .btn-delete { background-color: #dc3545; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>Quản Lý Sản Phẩm</h2>
+
+        <!-- Khu vực hiển thị thông báo -->
+        <div v-if="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+        <!-- Biểu mẫu Thêm / Sửa -->
+        <div class="form-box">
+            <h3>{{ isEditing ? 'Cập nhật sản phẩm (ID: ' + form.id + ')' : 'Thêm sản phẩm mới' }}</h3>
+            <form @submit.prevent="saveProduct">
+                <div class="form-group">
+                    <label>Tên sản phẩm:</label>
+                    <input type="text" v-model="form.name" placeholder="Nhập tên sản phẩm...">
+                </div>
+                <div class="form-group">
+                    <label>Đơn giá (đồng):</label>
+                    <input type="number" v-model.number="form.price" placeholder="Nhập đơn giá...">
+                </div>
+                <div class="form-group">
+                    <label>Số lượng tồn:</label>
+                    <input type="number" v-model.number="form.stock" placeholder="Nhập số lượng tồn...">
+                </div>
+                <button type="submit" class="btn-save">Lưu</button>
+                <button type="button" v-if="isEditing" @click="resetForm" class="btn-cancel">Hủy</button>
+            </form>
+        </div>
+
+        <!-- Bảng danh sách sản phẩm -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Tên sản phẩm</th>
+                    <th>Đơn giá</th>
+                    <th>Số lượng tồn</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="item in products" :key="item.id">
+                    <td>{{ item.name }}</td>
+                    <td>{{ formatPrice(item.price) }} đ</td>
+                    <td>{{ item.stock }}</td>
+                    <td>
+                        <button class="btn-edit" @click="editProduct(item)">Sửa</button>
+                        <button class="btn-delete" @click="deleteProduct(item.id)">Xóa</button>
+                    </td>
+                </tr>
+                <tr v-if="products.length === 0">
+                    <td colspan="4" style="text-align: center;">Chưa có sản phẩm nào.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    apiUrl: 'api/products.php',
+                    products: [],
+                    isEditing: false,
+                    errorMessage: '',
+                    successMessage: '',
+                    form: {
+                        id: null,
+                        name: '',
+                        price: '',
+                        stock: ''
+                    }
+                };
+            },
+            mounted() {
+                // 1. Tải danh sách ngay khi mở trang
+                this.fetchProducts();
+            },
+            methods: {
+                formatPrice(value) {
+                    return Number(value).toLocaleString('vi-VN');
+                },
+                clearMessages() {
+                    this.errorMessage = '';
+                    this.successMessage = '';
+                },
+                async fetchProducts() {
+                    try {
+                        const response = await fetch(this.apiUrl);
+                        const result = await response.json();
+                        if (result.success) {
+                            this.products = result.data;
+                        } else {
+                            this.errorMessage = result.message || 'Không thể tải danh sách sản phẩm.';
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Lỗi kết nối đến máy chủ.';
+                    }
+                },
+                // 2 & 3. Xử lý Lưu (Thêm mới POST hoặc Cập nhật PUT)
+                async saveProduct() {
+                    this.clearMessages();
+                    const url = this.isEditing ? `${this.apiUrl}?id=${this.form.id}` : this.apiUrl;
+                    const method = this.isEditing ? 'PUT' : 'POST';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: this.form.name,
+                                price: this.form.price,
+                                stock: this.form.stock
+                            })
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.successMessage = result.message;
+                            this.resetForm();
+                            await this.fetchProducts(); // Cập nhật lại bảng
+                        } else {
+                            this.errorMessage = result.message;
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Có lỗi xảy ra khi gửi dữ liệu.';
+                    }
+                },
+                // Đưa dữ liệu dòng được chọn lên biểu mẫu
+                editProduct(product) {
+                    this.clearMessages();
+                    this.isEditing = true;
+                    this.form = {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        stock: product.stock
+                    };
+                },
+                // 4. Xác nhận và Xóa sản phẩm (DELETE)
+                async deleteProduct(id) {
+                    this.clearMessages();
+                    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`${this.apiUrl}?id=${id}`, {
+                            method: 'DELETE'
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                            this.successMessage = result.message;
+                            // Nếu đang sửa chính sản phẩm vừa xóa thì reset form
+                            if (this.isEditing && this.form.id === id) {
+                                this.resetForm();
+                            }
+                            await this.fetchProducts(); // Cập nhật lại bảng
+                        } else {
+                            this.errorMessage = result.message;
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Có lỗi xảy ra khi xóa sản phẩm.';
+                    }
+                },
+                resetForm() {
+                    this.isEditing = false;
+                    this.form = { id: null, name: '', price: '', stock: '' };
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
